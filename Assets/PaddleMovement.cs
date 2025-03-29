@@ -15,8 +15,12 @@ public class PaddleMovement : NetworkBehaviour
 
     [SyncVar] public int playerIndex; // Assigned by the server to indicate player order
 
+    private Rigidbody rb;
+
     void Start()
     {
+        rb = GetComponent<Rigidbody>();
+
         if (isLocalPlayer)
         {
             // Find the enabled camera for the local player
@@ -79,21 +83,23 @@ public class PaddleMovement : NetworkBehaviour
         mousePos.y = Mathf.Clamp(mousePos.y, yMin, yMax);
         mousePos.z = transform.position.z;
 
-        // Debug.Log($"{netId}: Calculated mouse position: {mousePos}");
-
-        Rigidbody rb = GetComponent<Rigidbody>();
         if (rb != null)
         {
             rb.MovePosition(Vector3.Lerp(transform.position, mousePos, speed * Time.deltaTime));
-            // Debug.Log($"{netId}: Paddle moved to: {mousePos}");
+
+            // Send paddle velocity to the server
+            CmdSendPaddleVelocity(rb.linearVelocity);
         }
         else
         {
             Debug.LogError("Rigidbody not found on paddle.");
         }
+    }
 
-        // transform.position = Vector3.Lerp(transform.position, mousePos, speed * Time.deltaTime);
-        // Debug.Log($"{netId}: Paddle moved to: {mousePos}");
+    [Command]
+    private void CmdSendPaddleVelocity(Vector3 velocity)
+    {
+        Ball.Instance.UpdatePaddle2Velocity(velocity);
     }
 
     void AssignMaterial()

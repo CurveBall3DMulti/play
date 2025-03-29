@@ -2,6 +2,8 @@ using UnityEngine;
 using UnityEngine.UI;
 using Mirror;
 using TMPro;
+using UnityEngine.Networking;
+using System.Collections;
 
 public class MainMenu : MonoBehaviour
 {
@@ -16,69 +18,27 @@ public class MainMenu : MonoBehaviour
     public GameObject serverListItemPrefab; // A prefab for each server list item
     public GameObject serverListPanel; // The panel containing the server list
 
+    public TMP_Text serverInfoText; 
+
     public CustomNetworkDiscovery networkDiscovery;
 
-    // public TMP_Text redScore; // Text for the red player's score
-    // public TMP_Text blueScore; // Text for the blue player's score
-
-    // [SyncVar(hook = nameof(OnRedScoreChanged))]
-    // private int redPlayerScore = 0; // Red player's score
-
-    // [SyncVar(hook = nameof(OnBlueScoreChanged))]
-    // private int bluePlayerScore = 0; // Blue player's score
+    private string serverIPAddress = "Fetching IP...";
 
     private void Start()
     {
-        // Assign button listeners
         hostButton.onClick.AddListener(HostGame);
         joinButton.onClick.AddListener(StartDiscovery);
         quitButton.onClick.AddListener(QuitGame);
         leaveButton.onClick.AddListener(LeaveGame);
         serverListPanel.SetActive(false);
 
-        // Initialize UI visibility
         UpdateUI();
-
-        // Initialize scores
-        // UpdateScoreText();
     }
 
     void Update()
     {
         UpdateUI();
     }
-
-    // Called on the server to update the red player's score
-    // [Server]
-    // public void UpdateRedScore()
-    // {
-    //     redPlayerScore++;
-    // }
-
-    // // Called on the server to update the blue player's score
-    // [Server]
-    // public void UpdateBlueScore()
-    // {
-    //     bluePlayerScore++;
-    // }
-
-    // // Hook for redPlayerScore SyncVar
-    // private void OnRedScoreChanged(int oldScore, int newScore)
-    // {
-    //     UpdateScoreText();
-    // }
-
-    // // Hook for bluePlayerScore SyncVar
-    // private void OnBlueScoreChanged(int oldScore, int newScore)
-    // {
-    //     UpdateScoreText();
-    // }
-
-    // private void UpdateScoreText()
-    // {
-    //     redScore.text = $"Red: {redPlayerScore}";
-    //     blueScore.text = $"Blue: {bluePlayerScore}";
-    // }
 
     private void HostGame()
     {
@@ -88,7 +48,9 @@ public class MainMenu : MonoBehaviour
         // Start broadcasting the server
         networkDiscovery.AdvertiseServer();
 
-        // Update UI
+        // Fetch and display the external IP address
+        GetIPAddress();    
+
         UpdateUI();
     }
 
@@ -96,7 +58,6 @@ public class MainMenu : MonoBehaviour
     {
         Debug.Log("Searching for servers...");
 
-        // Show the server list panel
         serverListPanel.SetActive(true);
 
         // Clear the server list UI
@@ -165,7 +126,6 @@ public class MainMenu : MonoBehaviour
                 // Hide the server list panel after joining
                 serverListPanel.SetActive(false);
 
-                // Update UI
                 UpdateUI();
             });
         }
@@ -185,7 +145,14 @@ public class MainMenu : MonoBehaviour
         joinButton.gameObject.SetActive(!isConnected);
         leaveButton.gameObject.SetActive(isConnected);
 
-        // UpdateScoreText();
+        if (serverIPAddress == "Fetching IP...")
+        {
+            serverIPAddress = GetIPAddress();
+        }
+
+        serverInfoText.text = isConnected ? $"Server IP: {serverIPAddress}" : "";
+
+        serverInfoText.gameObject.SetActive(isConnected);
 
         // Update the Leave button text
         if (NetworkServer.active)
@@ -201,6 +168,28 @@ public class MainMenu : MonoBehaviour
         if (isConnected)
         {
             serverListPanel.SetActive(false);
+        }
+    }
+    private string GetIPAddress()
+    {
+        if (!NetworkServer.active && NetworkClient.active)
+        {
+            return NetworkManager.singleton.networkAddress;
+        }
+        else if (NetworkServer.active)
+        {
+            var host = System.Net.Dns.GetHostEntry(System.Net.Dns.GetHostName());
+            foreach (var ip in host.AddressList)
+            {
+                if (ip.AddressFamily == System.Net.Sockets.AddressFamily.InterNetwork)
+                {
+                    return ip.ToString(); // Return the first IPv4 address
+                }
+            }
+            throw new System.Exception("No network adapters with an IPv4 address in the system!");
+        }
+        else{
+            return serverIPAddress;
         }
     }
 }

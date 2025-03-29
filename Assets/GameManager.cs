@@ -132,7 +132,7 @@ public class GameManager : NetworkManager
         }
 
         // Spawn a new ball
-        ballInstance = Instantiate(ballPrefab, new Vector3(0, 1, 0), Quaternion.identity);
+        ballInstance = Instantiate(ballPrefab, new Vector3(0, 0.95f, 0), Quaternion.identity);
         NetworkServer.Spawn(ballInstance);
 
         // Ensure the ball's Rigidbody is not null
@@ -155,7 +155,7 @@ public class GameManager : NetworkManager
             ballInstance.GetComponent<Ball>().ResetBall();
         }
         else{
-            ballInstance = Instantiate(ballPrefab, new Vector3(0, 1, 0), Quaternion.identity);
+            ballInstance = Instantiate(ballPrefab, new Vector3(0, 0.95f, 0), Quaternion.identity);
             NetworkServer.Spawn(ballInstance);
         }
 
@@ -227,7 +227,6 @@ public class GameManager : NetworkManager
 }
 
 
-// Github setup
 // reset game button
 // curve ball
 // improve looks
