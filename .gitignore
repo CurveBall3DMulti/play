@@ -1,0 +1,33 @@
+# Unity generated files
+[Ll]ibrary/
+[Tt]emp/
+[Oo]bj/
+[Bb]uild/
+[Bb]uilds/
+[Ll]ogs/
+[Mm]emoryCaptures/
+
+# Visual Studio / MonoDevelop generated files
+[Aa]ssets/**/*.csproj
+[Aa]ssets/**/*.unityproj
+[Aa]ssets/**/*.sln
+[Aa]ssets/**/*.suo
+[Aa]ssets/**/*.user
+[Aa]ssets/**/*.userprefs
+[Aa]ssets/**/*.pidb
+[Aa]ssets/**/*.booproj
+[Aa]ssets/**/*.svd
+
+# Rider generated files
+[Aa]ssets/**/*.idea/
+[Aa]ssets/**/*.iml
+[Aa]ssets/**/*.ipr
+
+# Unity Asset Store tools
+[Aa]ssets/AssetStoreTools*
+
+# Crashlytics generated files
+[Aa]ssets/Plugins/Android/com.crashlytics.*
+
+# Auto-generated files
+[Aa]ssets/StreamingAssets/UnityAnalytics/
