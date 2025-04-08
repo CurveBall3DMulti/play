@@ -9,20 +9,27 @@ public class GameManager : NetworkManager
     public GameObject scoreUiPrefab;
 
     private GameObject scoreUiInstance;
+    
+    public GameObject debugWallPrefab;
+
+    private GameObject debugWallInstance;
     private int playerCount = 0;
 
     public Camera camera1;
     public Camera camera2;
+    public Light blueDirLight;
+    public Light redDirLight;
+    public bool debugMode = false;
     public override void Start()
     {
         base.Start();
 
-        setCameras();
+        setCamerasAndLights();
     }
 
     public override void Update()
     {
-        setCameras();
+        setCamerasAndLights();
     }
 
     public override void OnStartServer()
@@ -30,12 +37,12 @@ public class GameManager : NetworkManager
         base.OnStartServer();
 
         Debug.Log("Server started, players: " + playerCount);
-        setCameras();
+        setCamerasAndLights();
     }
 
     public override void OnServerAddPlayer(NetworkConnectionToClient conn)
     {
-        Vector3 playerPosition = playerCount == 0 ? new Vector3(0, 1, 5) : new Vector3(0, 1, -5);
+        Vector3 playerPosition = playerCount == 0 ? new Vector3(0, 1, 4.92f) : new Vector3(0, 1, -4.92f);
         Quaternion playerRotation = playerCount == 0 ? Quaternion.identity : Quaternion.Euler(0, 180, 0);
 
         GameObject player = Instantiate(playerPrefab, playerPosition, playerRotation);
@@ -51,15 +58,28 @@ public class GameManager : NetworkManager
 
         playerCount++;
 
-        setCameras();
-        if (playerCount == 2) // Check if two players are connected
-        {
-            StartGame();
+        setCamerasAndLights();
+        if (debugMode){
+            if (playerCount == 1){
+                if (debugWallInstance != null){
+                    NetworkServer.Destroy(debugWallInstance);
+                    debugWallInstance = null;
+                }
+                debugWallInstance = Instantiate(debugWallPrefab, new Vector3(0, 1, -4.95f), Quaternion.identity);
+                StartGame();
+            }
         }
+        else{
+            if (playerCount == 2) // Check if two players are connected
+            {
+                StartGame();
+            }
+        }
+        
         Debug.Log("players: " + playerCount);
     }
 
-    public void setCameras()
+    public void setCamerasAndLights()
     {
         // If the player is not in a server, enable camera1 by default
         if (!NetworkClient.active && !NetworkServer.active)
@@ -68,6 +88,9 @@ public class GameManager : NetworkManager
             camera1.GetComponent<AudioListener>().enabled = true;
             camera2.enabled = false;
             camera2.GetComponent<AudioListener>().enabled = false;
+
+            blueDirLight.enabled = true;
+            redDirLight.enabled = false;
             return;
         }
 
@@ -90,6 +113,8 @@ public class GameManager : NetworkManager
                         camera1.GetComponent<AudioListener>().enabled = true;
                         camera2.enabled = false;
                         camera2.GetComponent<AudioListener>().enabled = false;
+                        blueDirLight.enabled = true;
+                        redDirLight.enabled = false;
                     }
                     else if (player.transform.position.z < 0)
                     {
@@ -98,6 +123,8 @@ public class GameManager : NetworkManager
                         camera2.GetComponent<AudioListener>().enabled = true;
                         camera1.enabled = false;
                         camera1.GetComponent<AudioListener>().enabled = false;
+                        blueDirLight.enabled = false;
+                        redDirLight.enabled = true;
                     }
                 }
             }
@@ -109,6 +136,8 @@ public class GameManager : NetworkManager
             camera1.GetComponent<AudioListener>().enabled = true;
             camera2.enabled = false;
             camera2.GetComponent<AudioListener>().enabled = false;
+            blueDirLight.enabled = true;
+            redDirLight.enabled = false;
         }
     }
 
@@ -187,16 +216,22 @@ public class GameManager : NetworkManager
         base.OnServerDisconnect(conn);
 
         playerCount = Mathf.Max(0, playerCount - 1); // Decrease player count when someone disconnects
-        setCameras();
+        setCamerasAndLights();
         if (ballInstance != null && playerCount < 2) // If there are less than 2 players, destroy the ball
         {
             Debug.Log("Player disconnected, destroying ball.");
-            NetworkServer.Destroy(ballInstance);
+            if (ballInstance != null){
+                NetworkServer.Destroy(ballInstance);
+                ballInstance = null; 
+            }
             if (scoreUiInstance != null){
                 NetworkServer.Destroy(scoreUiInstance);
                 scoreUiInstance = null;
             }
-            ballInstance = null; // Clear the reference to avoid issues
+            if (debugWallInstance != null){
+                NetworkServer.Destroy(debugWallInstance);
+                debugWallInstance = null;
+            }
         }
 
         Debug.Log("Player disconnected. Remaining players: " + playerCount);
@@ -209,7 +244,7 @@ public class GameManager : NetworkManager
         // Reset player count to 0
         playerCount = 0;
 
-        setCameras();
+        setCamerasAndLights();
 
         if (ballInstance != null)
         {
@@ -222,11 +257,15 @@ public class GameManager : NetworkManager
             scoreUiInstance = null;
         }
 
+        if (debugWallInstance != null){
+            NetworkServer.Destroy(debugWallInstance);
+            debugWallInstance = null;
+        }
+
         Debug.Log("Server stopped. Player count reset to 0.");
     }
 }
 
 
-// reset game button
 // curve ball
 // improve looks

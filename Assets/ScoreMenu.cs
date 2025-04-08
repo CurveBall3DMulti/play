@@ -6,8 +6,8 @@ using UnityEngine.UI;
 
 public class ScoreMenu : NetworkBehaviour
 {
-    private TMP_Text redScore;
-    private TMP_Text blueScore;
+    private TMP_Text player1ScoreText;
+    private TMP_Text player2ScoreText;
 
     private TMP_Text winnerText;
     private TMP_Text winAmountText;
@@ -24,11 +24,15 @@ public class ScoreMenu : NetworkBehaviour
 
     private TMP_Text hostChangingWinAmountText;
 
+    private GameObject changeWinAmountBackgroundPanel;
+
+    private GameObject scoreboardPanel;
+
     [SyncVar(hook = nameof(OnRedScoreChanged))]
-    private int redPlayerScore = 0;
+    private int player1Score = 0;
 
     [SyncVar(hook = nameof(OnBlueScoreChanged))]
-    private int bluePlayerScore = 0;
+    private int player2Score = 0;
 
     [SyncVar(hook = nameof(OnWinnerChanged))]
     private bool isWinner = false;
@@ -42,13 +46,15 @@ public class ScoreMenu : NetworkBehaviour
     [SyncVar(hook = nameof(OnWinAmountUIChanged))]
     private bool showChangeWinAmountUI = false;
 
+    private Button resetButton;
+
     private GameManager gameManager;
 
     private void Start()
     {
         // Find the TMP_Text components for red and blue scores as children of this GameObject
-        redScore = transform.Find("RedScore").GetComponent<TMP_Text>();
-        blueScore = transform.Find("BlueScore").GetComponent<TMP_Text>();
+        player1ScoreText = transform.Find("CyanScore").GetComponent<TMP_Text>();
+        player2ScoreText = transform.Find("PurpleScore").GetComponent<TMP_Text>();
         winnerText = transform.Find("WinnerText").GetComponent<TMP_Text>();
         winAmountText = transform.Find("WinAmountText").GetComponent<TMP_Text>();
         changeWinAmountButton = transform.Find("ChangeWinAmountButton").GetComponent<Button>();
@@ -58,11 +64,15 @@ public class ScoreMenu : NetworkBehaviour
         changeWinAmountSave = transform.Find("ChangeWinAmountSave").GetComponent<Button>();
         changeWinAmountCancel = transform.Find("ChangeWinAmountCancel").GetComponent<Button>();
         hostChangingWinAmountText = transform.Find("HostChangingWinAmountText").GetComponent<TMP_Text>();
+        resetButton = transform.Find("ResetButton").GetComponent<Button>();
+        changeWinAmountBackgroundPanel = transform.Find("ChangeWinAmountBackgroundPanel").gameObject;
+        scoreboardPanel = transform.Find("Scoreboard").gameObject;
 
 
         changeWinAmountButton.onClick.AddListener(OnChangeWinAmountClick);
         changeWinAmountSave.onClick.AddListener(OnChangeWinAmountSaveClick);
         changeWinAmountCancel.onClick.AddListener(OnChangeWinAmountCancelClick);
+        resetButton.onClick.AddListener(OnResetButtonClick);
 
         UpdateScoreUI();
     }
@@ -88,15 +98,20 @@ public class ScoreMenu : NetworkBehaviour
         {
             changeWinAmountCancel.gameObject.SetActive(isVisible);
         }
+
+        if (changeWinAmountBackgroundPanel != null)
+        {
+            changeWinAmountBackgroundPanel.SetActive(isVisible);
+        }
     }
 
     public void Update()
     {
-        if (redScore == null){
-            redScore = transform.Find("RedScore").GetComponent<TMP_Text>();
+        if (player1ScoreText == null){
+            player1ScoreText = transform.Find("CyanScore").GetComponent<TMP_Text>();
         }
-        if (blueScore == null){
-            blueScore = transform.Find("BlueScore").GetComponent<TMP_Text>();
+        if (player2ScoreText == null){
+            player2ScoreText = transform.Find("PurpleScore").GetComponent<TMP_Text>();
         }
         if (winnerText == null){
             winnerText = transform.Find("WinnerText").GetComponent<TMP_Text>();
@@ -122,6 +137,9 @@ public class ScoreMenu : NetworkBehaviour
         if (hostChangingWinAmountText == null){
             hostChangingWinAmountText = transform.Find("HostChangingWinAmountText").GetComponent<TMP_Text>();
         }
+        if (changeWinAmountBackgroundPanel == null){
+            changeWinAmountBackgroundPanel = transform.Find("ChangeWinAmountBackgroundPanel").gameObject;
+        }
 
         if (!isServer){
             UpdateScoreUI();
@@ -132,10 +150,10 @@ public class ScoreMenu : NetworkBehaviour
 
     [Server]
     private void CheckWin(){
-        if (redPlayerScore >= winAmount || bluePlayerScore >= winAmount)
+        if (player2Score >= winAmount || player1Score >= winAmount)
         {
             isWinner = true;
-            winnerString = $"{(redPlayerScore >= winAmount ? "Red" : "Blue")} Wins!";
+            winnerString = $"{(player2Score >= winAmount ? "Pink" : "Blue")} Wins!";
             StartCoroutine(WaitAndResetGame());
         }
     }
@@ -151,22 +169,22 @@ public class ScoreMenu : NetworkBehaviour
     [Server] 
     public void AddPointToRed()
     {
-        redPlayerScore++;
+        player2Score++;
         CheckWin();
     }
 
     [Server] 
     public void AddPointToBlue()
     {
-        bluePlayerScore++;
+        player1Score++;
         CheckWin();
     }
 
     [Server] 
     public void ResetPoints()
     {
-        redPlayerScore = 0;
-        bluePlayerScore = 0;
+        player1Score = 0;
+        player2Score = 0;
         isWinner = false;
         winnerString = "";
     }
@@ -210,14 +228,14 @@ public class ScoreMenu : NetworkBehaviour
     }
     private void UpdateScoreUI()
     {
-        if (redScore != null)
+        if (player1ScoreText != null)
         {
-            redScore.text = $"Red: {redPlayerScore}";
+            player1ScoreText.text = player1Score.ToString();
         }
 
-        if (blueScore != null)
+        if (player2ScoreText != null)
         {
-            blueScore.text = $"Blue: {bluePlayerScore}";
+            player2ScoreText.text = player2Score.ToString();
         }
 
         if (winnerText != null)
@@ -259,6 +277,14 @@ public class ScoreMenu : NetworkBehaviour
         else{
             Debug.LogError("hostChangingWinAmountText is null");
         }
+
+        if (resetButton != null)
+        {
+            resetButton.gameObject.SetActive(isServer);
+        }
+        else{
+            Debug.LogError("resetButton is null");
+        }
     }
 
     [Server]
@@ -285,5 +311,11 @@ public class ScoreMenu : NetworkBehaviour
     [Server]
     private void OnChangeWinAmountCancelClick(){
         setShowChangeWinAmount(false);
+    }
+
+    [Server]
+    private void OnResetButtonClick(){
+        // ResetPoints();
+        gameManager.ResetGame();
     }
 }

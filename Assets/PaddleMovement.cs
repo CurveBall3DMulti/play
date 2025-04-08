@@ -10,8 +10,11 @@ public class PaddleMovement : NetworkBehaviour
     public float yMin = 0f;  // Lower boundary of the paddle movement
     public float yMax = 1f;  // Upper boundary of the paddle movement
 
-    public Material player1Material; // Material for the first player
-    public Material player2Material; // Material for the second player
+    public Material player1Material; 
+    public Material player2Material; 
+
+    public Material player1OuterMaterial; 
+    public Material player2OuterMaterial; 
 
     [SyncVar] public int playerIndex; // Assigned by the server to indicate player order
 
@@ -88,7 +91,9 @@ public class PaddleMovement : NetworkBehaviour
             rb.MovePosition(Vector3.Lerp(transform.position, mousePos, speed * Time.deltaTime));
 
             // Send paddle velocity to the server
-            CmdSendPaddleVelocity(rb.linearVelocity);
+            if (!isServer){
+                CmdSendPaddleVelocity(rb.linearVelocity);
+            }
         }
         else
         {
@@ -118,6 +123,22 @@ public class PaddleMovement : NetworkBehaviour
         else if (playerIndex == 2)
         {
             renderer.material = player2Material;
+        }
+
+        Renderer childRenderer = transform.Find("Outer").GetComponent<Renderer>();
+        if (childRenderer == null)
+        {
+            Debug.LogError("Renderer not found on the paddle prefab.");
+            return;
+        }
+
+        if (playerIndex == 1)
+        {
+            childRenderer.material = player1OuterMaterial;
+        }
+        else if (playerIndex == 2)
+        {
+            childRenderer.material = player2OuterMaterial;
         }
     }
 }

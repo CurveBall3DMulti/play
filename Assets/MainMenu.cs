@@ -11,7 +11,6 @@ public class MainMenu : MonoBehaviour
     public Button joinButton;
     public Button quitButton;
     public Button leaveButton;
-
     public TMP_Text leaveButtonText; // Text component for the Leave button
 
     public Transform serverListContainer; // A UI container for the server list
